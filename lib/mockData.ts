@@ -14,19 +14,6 @@ export const MOCK_DESIGNERS: Designer[] = [
     brand_color_text: '#f5f0e8',
     is_active: true,
   },
-  {
-    id: 'des_luna',
-    slug: 'luna-atelier',
-    name: 'Luna Atelier',
-    instagram_handle: 'lunaatelier',
-    website_url: 'https://lunaatelier.com',
-    bio: 'Luxury womenswear crafted with intention. Where timeless silhouettes meet contemporary spirit.',
-    hero_tagline: 'Wear the light you carry within',
-    brand_color_primary: '#0d0d14',
-    brand_color_accent: '#c9a96e',
-    brand_color_text: '#f5f0e8',
-    is_active: true,
-  },
 ];
 
 const BASE = 'https://yvoxviinvpkupkozrqgt.supabase.co/storage/v1/object/public/tryon-photos/fabula';
@@ -51,12 +38,6 @@ export const MOCK_CLOTHING: ClothingItem[] = [
   { id: 'fab_15', designer_id: 'des_fabula', name: 'Drape Dress', description: 'Effortlessly draped in soft fabric — casual luxury.', image_url: `${BASE}/item_15.jpg`, instagram_post_url: `${IG_BASE}/p/DVYigiRk2bJ/`, buy_url: `${IG_BASE}/`, price: 'DM for price', category: 'dress', display_order: 15 },
   { id: 'fab_16', designer_id: 'des_fabula', name: 'Silhouette Dress', description: 'A dress that sculpts the silhouette with modern femininity.', image_url: `${BASE}/item_16.jpg`, instagram_post_url: `${IG_BASE}/p/DVIQdFnE1wB/`, buy_url: `${IG_BASE}/`, price: 'DM for price', category: 'dress', display_order: 16 },
   { id: 'fab_17', designer_id: 'des_fabula', name: 'Haze Net Dress', description: 'A haze of layered net — mesmerizing and effortlessly chic.', image_url: `${BASE}/item_17.jpg`, instagram_post_url: `${IG_BASE}/p/DU43IH_k2bO/`, buy_url: `${IG_BASE}/`, price: 'DM for price', category: 'net dress', display_order: 17 },
-
-  // ─── Luna Atelier Collection (demo) ──────────────────────────────────────
-  { id: 'item_001', designer_id: 'des_luna', name: 'Aura Silk Gown', description: 'Floor-length bias-cut silk gown with hand-stitched embroidery.', image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80', instagram_post_url: 'https://www.instagram.com/p/example1/', buy_url: 'https://lunaatelier.com/shop', price: '$1,240', category: 'dress', display_order: 1 },
-  { id: 'item_002', designer_id: 'des_luna', name: 'Solstice Blazer', description: 'Oversized ivory wool blazer with sculptural lapel.', image_url: 'https://images.unsplash.com/photo-1551803091-e20673f15770?w=600&q=80', instagram_post_url: 'https://www.instagram.com/p/example2/', buy_url: 'https://lunaatelier.com/shop', price: '$890', category: 'blazer', display_order: 2 },
-  { id: 'item_003', designer_id: 'des_luna', name: 'Eclipse Midi', description: 'Deep burgundy crepe midi dress with architectural pleating.', image_url: 'https://images.unsplash.com/photo-1572804013427-4d7ca7268217?w=600&q=80', instagram_post_url: 'https://www.instagram.com/p/example3/', buy_url: 'https://lunaatelier.com/shop', price: '$760', category: 'dress', display_order: 3 },
-  { id: 'item_004', designer_id: 'des_luna', name: 'Celestial Set', description: 'Two-piece sand linen set with wide-leg trousers.', image_url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80', instagram_post_url: 'https://www.instagram.com/p/example4/', buy_url: 'https://lunaatelier.com/shop', price: '$520', category: 'set', display_order: 4 },
 ];
 
 export function getDesignerBySlug(slug: string): Designer | undefined {
