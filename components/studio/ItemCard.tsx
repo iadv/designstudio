@@ -18,6 +18,7 @@ export default function ItemCard({ item, designer, result, customerPhoto }: Prop
 
   const status = result?.status ?? 'pending';
   const isDone = status === 'done';
+  const isFailed = status === 'failed';
   const isProcessing = status === 'processing';
 
   const dmUrl = `https://www.instagram.com/${designer.instagram_handle}`;
@@ -46,7 +47,7 @@ export default function ItemCard({ item, designer, result, customerPhoto }: Prop
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            filter: isDone ? 'none' : isProcessing ? 'blur(4px) brightness(0.6)' : 'brightness(0.4)',
+            filter: isDone ? 'none' : isFailed ? 'brightness(0.7)' : isProcessing ? 'blur(4px) brightness(0.6)' : 'brightness(0.4)',
             transition: 'filter 0.8s ease',
           }}
         />
@@ -100,7 +101,7 @@ export default function ItemCard({ item, designer, result, customerPhoto }: Prop
           </div>
         )}
 
-        {/* Loading states */}
+        {/* Loading / error states */}
         {!isDone && (
           <div
             style={{
@@ -113,31 +114,27 @@ export default function ItemCard({ item, designer, result, customerPhoto }: Prop
               gap: '12px',
             }}
           >
-            {isProcessing ? (
+            {isFailed ? (
+              <div style={{ textAlign: 'center', padding: '12px' }}>
+                <div style={{ fontSize: '20px', marginBottom: '8px' }}>✦</div>
+                <span style={{ fontSize: '10px', letterSpacing: '0.15em', color: text, opacity: 0.5, textTransform: 'uppercase', display: 'block' }}>
+                  {result?.error ? 'Generation' : 'Original piece'}
+                </span>
+                {result?.error && (
+                  <p style={{ fontSize: '10px', color: '#ff4444', marginTop: '4px', maxWidth: '200px', margin: '4px auto 0' }}>
+                    {result.error}
+                  </p>
+                )}
+              </div>
+            ) : isProcessing ? (
               <>
                 <Spinner color={accent} />
-                <span
-                  style={{
-                    fontSize: '11px',
-                    letterSpacing: '0.2em',
-                    color: accent,
-                    textTransform: 'uppercase',
-                    opacity: 0.8,
-                  }}
-                >
+                <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: accent, textTransform: 'uppercase', opacity: 0.8 }}>
                   Creating your look…
                 </span>
               </>
             ) : (
-              <span
-                style={{
-                  fontSize: '11px',
-                  letterSpacing: '0.2em',
-                  color: text,
-                  opacity: 0.4,
-                  textTransform: 'uppercase',
-                }}
-              >
+              <span style={{ fontSize: '11px', letterSpacing: '0.2em', color: text, opacity: 0.4, textTransform: 'uppercase' }}>
                 Queued
               </span>
             )}

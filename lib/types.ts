@@ -34,6 +34,7 @@ export interface TryonResult {
   designer_id: string;
   generated_image_url?: string;
   status: 'pending' | 'processing' | 'done' | 'failed';
+  error?: string;
   created_at: string;
 }
 

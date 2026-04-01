@@ -54,7 +54,7 @@ export default function DesignerPortal({ designer, clothing }: Props) {
       setSessionState('generating');
 
       // Step 1: Upload customer photo to Supabase Storage
-      let humanImageUrl = previewUrl; // fallback to local preview
+      let humanImageUrl: string | null = null;
       try {
         const formData = new FormData();
         formData.append('photo', photoFile);
@@ -66,38 +66,53 @@ export default function DesignerPortal({ designer, clothing }: Props) {
           humanImageUrl = photo_url;
         }
       } catch (e) {
-        console.warn('Upload failed, using local preview URL');
+        console.warn('Upload failed');
       }
 
-      // Step 2: Fire all try-on jobs in parallel
+      // Can't proceed without a public URL for fal.ai
+      if (!humanImageUrl) {
+        clothing.forEach((item) => updateResult(item.id, { status: 'failed' }));
+        setSessionState('complete');
+        return;
+      }
+
+      // Step 2: Fire all try-on jobs sequentially to avoid overloading the server/browser concurrent limits
       let completedCount = 0;
-      const promises = clothing.map(async (item) => {
+      for (const item of clothing) {
         updateResult(item.id, { status: 'processing' });
         try {
           const res = await fetch('/api/tryon', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              human_image_url: humanImageUrl,
+              human_image_url: humanImageUrl || '',
               garment_image_url: item.image_url,
               item_id: item.id,
               item_name: item.name,
               category: item.category,
             }),
           });
-          const data = await res.json();
-          updateResult(item.id, {
-            status: data.status === 'done' ? 'done' : 'failed',
-            generated_image_url: data.generated_image_url,
-          });
-        } catch {
-          updateResult(item.id, { status: 'failed' });
+          
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            updateResult(item.id, { 
+                status: 'failed', 
+                error: errData.error || `Error ${res.status}` 
+            });
+          } else {
+            const data = await res.json();
+            updateResult(item.id, {
+              status: data.status === 'done' ? 'done' : 'failed',
+              generated_image_url: data.generated_image_url,
+              error: data.error
+            });
+          }
+        } catch (err: any) {
+          console.error(`Error generating ${item.name}:`, err);
+          updateResult(item.id, { status: 'failed', error: 'Request failed' });
         }
         completedCount++;
-        if (completedCount === clothing.length) setSessionState('complete');
-      });
-
-      await Promise.allSettled(promises);
+      }
       setSessionState('complete');
     },
     [clothing, designer.id, updateResult]

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fal } from "@fal-ai/client";
 
 export async function POST(req: NextRequest) {
   const { human_image_url, garment_image_url, item_id } = await req.json();
@@ -7,67 +8,61 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing image URLs' }, { status: 400 });
   }
 
+  // Resize Supabase-hosted garment images to max 1024px before sending to fal.ai
+  const resizedGarmentUrl = garment_image_url.includes('supabase.co/storage')
+    ? garment_image_url + (garment_image_url.includes('?') ? '&width=1024' : '?width=1024')
+    : garment_image_url;
+
   const FAL_KEY = process.env.FAL_KEY;
 
   // ── Mock mode (no API key) ─────────────────────────────
   if (!FAL_KEY) {
     await new Promise((r) => setTimeout(r, 1500 + Math.random() * 2000));
     return NextResponse.json({
-      item_id,
-      status: 'done',
-      generated_image_url: garment_image_url,
-      mock: true,
+      item_id, status: 'done', generated_image_url: garment_image_url, mock: true,
     });
   }
 
   // ── Live: fal.ai Kling Kolors Virtual Try-On v1.5 ──────
   try {
-    // Submit job
-    const submitRes = await fetch(
-      'https://queue.fal.run/fal-ai/kling/v1-5/kolors-virtual-try-on',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Key ${FAL_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ human_image_url, garment_image_url }),
-      }
-    );
+    // Configure the fal client with your key
+    // Note: In Next.js, we must use the server-side configuration
+    const result: any = await fal.subscribe("fal-ai/kling/v1-5/kolors-virtual-try-on", {
+      input: {
+        human_image_url,
+        garment_image_url: resizedGarmentUrl,
+      },
+      pollInterval: 5000, // Check every 5s
+      timeout: 120000,    // 2 min max wait
+    });
 
-    if (!submitRes.ok) {
-      const err = await submitRes.text();
-      console.error('fal.ai submit error:', err);
-      return NextResponse.json({ error: 'Submission failed', item_id }, { status: 502 });
+    const generated_image_url = result?.images?.[0]?.url;
+    
+    if (!generated_image_url) {
+        throw new Error('No image generated in response');
     }
 
-    const { request_id } = await submitRes.json();
+    return NextResponse.json({ 
+        item_id, 
+        status: 'done', 
+        generated_image_url, 
+        mock: false 
+    });
 
-    // Poll for result (max 60s)
-    const start = Date.now();
-    while (Date.now() - start < 60000) {
-      await new Promise((r) => setTimeout(r, 2000));
-
-      const statusRes = await fetch(
-        `https://queue.fal.run/fal-ai/kling/v1-5/kolors-virtual-try-on/requests/${request_id}`,
-        { headers: { Authorization: `Key ${FAL_KEY}` } }
-      );
-
-      if (!statusRes.ok) continue;
-      const data = await statusRes.json();
-
-      if (data.status === 'COMPLETED') {
-        const generated_image_url = data?.output?.images?.[0]?.url;
-        return NextResponse.json({ item_id, status: 'done', generated_image_url, mock: false });
-      }
-      if (data.status === 'FAILED') {
-        return NextResponse.json({ item_id, status: 'failed', error: data.error }, { status: 502 });
-      }
+  } catch (err: any) {
+    console.error('fal.ai try-on error:', err);
+    
+    let userMessage = 'AI generation failed after timeout';
+    if (err.message?.includes('Exhausted balance')) {
+        userMessage = 'fal.ai balance exhausted — top up at fal.ai/dashboard/billing';
+    } else if (err.message) {
+        userMessage = err.message;
     }
 
-    return NextResponse.json({ item_id, status: 'failed', error: 'Timeout' }, { status: 504 });
-  } catch (err) {
-    console.error('Try-on error:', err);
-    return NextResponse.json({ error: 'Internal error', item_id }, { status: 500 });
+    return NextResponse.json({ 
+        error: userMessage, 
+        item_id, 
+        status: 'failed' 
+    }, { status: 502 });
   }
 }
